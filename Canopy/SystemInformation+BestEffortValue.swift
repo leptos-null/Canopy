@@ -31,20 +31,12 @@ extension SystemInformation {
                 return .signedInteger(0)
             }
             
-            let byteCount = rawBytes.count
             let decodedValue: BestEffortValue? = rawBytes.withUnsafeBytes { ptr in
-                switch byteCount {
-                case MemoryLayout<Int8>.size:
-                    return BestEffortValue.signedInteger(Int(ptr.load(as: Int8.self)))
-                case MemoryLayout<Int16>.size:
-                    return BestEffortValue.signedInteger(Int(ptr.load(as: Int16.self)))
-                case MemoryLayout<Int32>.size:
-                    return BestEffortValue.signedInteger(Int(ptr.load(as: Int32.self)))
-                case MemoryLayout<Int64>.size:
-                    return BestEffortValue.signedInteger(Int(ptr.load(as: Int64.self)))
-                default:
-                    return nil
-                }
+                if let value = BestEffortValue.signedInteger(from: ptr, as: Int8.self) { return value }
+                if let value = BestEffortValue.signedInteger(from: ptr, as: Int16.self) { return value }
+                if let value = BestEffortValue.signedInteger(from: ptr, as: Int32.self) { return value }
+                if let value = BestEffortValue.signedInteger(from: ptr, as: Int64.self) { return value }
+                return nil
             }
             return decodedValue ?? .opaque(rawBytes)
         case .unsignedInteger:
@@ -52,24 +44,28 @@ extension SystemInformation {
                 return .unsignedInteger(0)
             }
             
-            let byteCount = rawBytes.count
             let decodedValue: BestEffortValue? = rawBytes.withUnsafeBytes { ptr in
-                switch byteCount {
-                case MemoryLayout<UInt8>.size:
-                    return BestEffortValue.unsignedInteger(UInt(ptr.load(as: UInt8.self)))
-                case MemoryLayout<UInt16>.size:
-                    return BestEffortValue.unsignedInteger(UInt(ptr.load(as: UInt16.self)))
-                case MemoryLayout<UInt32>.size:
-                    return BestEffortValue.unsignedInteger(UInt(ptr.load(as: UInt32.self)))
-                case MemoryLayout<UInt64>.size:
-                    return BestEffortValue.unsignedInteger(UInt(ptr.load(as: UInt64.self)))
-                default:
-                    return nil
-                }
+                if let value = BestEffortValue.unsignedInteger(from: ptr, as: UInt8.self) { return value }
+                if let value = BestEffortValue.unsignedInteger(from: ptr, as: UInt16.self) { return value }
+                if let value = BestEffortValue.unsignedInteger(from: ptr, as: UInt32.self) { return value }
+                if let value = BestEffortValue.unsignedInteger(from: ptr, as: UInt64.self) { return value }
+                return nil
             }
             return decodedValue ?? .opaque(rawBytes)
         case .opaque:
             return .opaque(rawBytes)
         }
+    }
+}
+
+private extension SystemInformation.BestEffortValue {
+    static func signedInteger<T>(from buffer: UnsafeRawBufferPointer, as type: T.Type) -> Self? where T: FixedWidthInteger, T: SignedInteger {
+        guard (buffer.count == MemoryLayout<T>.size) else { return nil }
+        return .signedInteger(Int(buffer.load(as: T.self)))
+    }
+    
+    static func unsignedInteger<T>(from buffer: UnsafeRawBufferPointer, as type: T.Type) -> Self? where T: FixedWidthInteger, T: UnsignedInteger {
+        guard (buffer.count == MemoryLayout<T>.size) else { return nil }
+        return .unsignedInteger(UInt(buffer.load(as: T.self)))
     }
 }
