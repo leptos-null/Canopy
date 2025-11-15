@@ -6,16 +6,108 @@
 //
 
 import SwiftUI
+import System
 
 struct ContentView: View {
-    var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+    @State private var entriesResult: Result<[SystemEntry], System.Errno>?
+    
+    private func refresh() {
+        self.entriesResult = .init { () throws(System.Errno) in
+            try SystemInformation
+                .allObjectIDs()
+                .map { objectID in
+                    SystemEntry(objectID: objectID)
+                }
         }
-        .padding()
+    }
+    
+    var body: some View {
+        Group {
+            switch entriesResult {
+            case .success(let entries):
+                List {
+                    ForEach(entries) { entry in
+                        SystemEntryRow(entry: entry)
+                    }
+                }
+            case .failure(let failure):
+                Text(failure.localizedDescription)
+                    .foregroundStyle(Color.red)
+                    .scenePadding()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            case .none:
+                ProgressView()
+                    .scenePadding()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .onAppear {
+            guard (entriesResult == nil) else { return }
+            self.refresh()
+        }
+        .refreshable {
+            self.refresh()
+        }
+    }
+}
+
+private struct SystemEntryRow: View {
+    let entry: SystemEntry
+    
+    var body: some View {
+        LabeledContent {
+            switch entry.bestEffortValue {
+            case .success(let success):
+                BestEffortValueView(value: success)
+                
+            case .failure(.noSuchFileOrDirectory): // ENOENT
+                Text("No entry")
+                    .foregroundStyle(.secondary)
+                
+            case .failure(let failure):
+                Text(failure.localizedDescription)
+                    .foregroundStyle(Color.red)
+            }
+        } label: {
+            switch entry.label {
+            case .success(let success):
+                Text(success)
+                    .monospaced()
+                    .textSelection(.enabled)
+            case .failure(let failure):
+                Text(failure.localizedDescription)
+                    .foregroundStyle(Color.red)
+            }
+            
+            switch entry.description {
+            case .success(let success):
+                Text(success)
+                
+            case .failure(.noSuchFileOrDirectory): // ENOENT
+                EmptyView() // blank
+                
+            case .failure(let failure):
+                Text(failure.localizedDescription)
+                    .foregroundStyle(Color.red)
+            }
+        }
+    }
+}
+
+private struct BestEffortValueView: View {
+    let value: SystemInformation.BestEffortValue
+    
+    var body: some View {
+        switch value {
+        case .string(let string):
+            Text(string)
+        case .signedInteger(let int):
+            Text(int, format: .number)
+        case .unsignedInteger(let uint):
+            Text(uint, format: .number)
+        case .opaque(let array):
+            Text("opaque - \(array.count, format: .number) bytes")
+        }
     }
 }
 
