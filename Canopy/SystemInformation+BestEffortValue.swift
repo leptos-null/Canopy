@@ -26,6 +26,10 @@ extension SystemInformation {
         case .string:
             let value = String(nullTerminatedUTF8: rawBytes)
             return .string(value)
+        case .opaque where (metadata.format == "S" && ([.int, .quad]).contains(metadata.flags.type)):
+            // if an `int` or `quad` type reports as "S" (struct) without any more details, try loading as an integer anyway.
+            // the code below will return `opaque` anyway if the value is not the size of an integer type.
+            fallthrough
         case .signedInteger:
             if rawBytes.isEmpty {
                 return .signedInteger(0)
