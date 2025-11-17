@@ -9,6 +9,25 @@ import SwiftUI
 import System
 
 struct ContentView: View {
+    enum Selection: Hashable {
+        case entry(SystemEntry)
+        
+        func hash(into hasher: inout Hasher) {
+            switch self {
+            case .entry(let systemEntry):
+                hasher.combine("entry")
+                hasher.combine(systemEntry.id)
+            }
+        }
+        
+        static func == (lhs: Self, rhs: Self) -> Bool {
+            switch (lhs, rhs) {
+            case (.entry(let lhsEntry), .entry(let rhsEntry)):
+                return lhsEntry.id == rhsEntry.id
+            }
+        }
+    }
+    
     @State private var entriesResult: Result<[SystemEntry], System.Errno>?
     
     private func refresh() {
@@ -22,31 +41,42 @@ struct ContentView: View {
     }
     
     var body: some View {
-        Group {
-            switch entriesResult {
-            case .success(let entries):
-                List {
-                    ForEach(entries) { entry in
-                        SystemEntryRow(entry: entry)
+        NavigationStack {
+            Group {
+                switch entriesResult {
+                case .success(let entries):
+                    List {
+                        ForEach(entries) { entry in
+                            NavigationLink(value: Selection.entry(entry)) {
+                                SystemEntryRow(entry: entry)
+                            }
+                        }
                     }
+                case .failure(let failure):
+                    Text(failure.localizedDescription)
+                        .foregroundStyle(Color.red)
+                        .scenePadding()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                case .none:
+                    ProgressView()
+                        .scenePadding()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
-            case .failure(let failure):
-                Text(failure.localizedDescription)
-                    .foregroundStyle(Color.red)
-                    .scenePadding()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            case .none:
-                ProgressView()
-                    .scenePadding()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-        }
-        .onAppear {
-            guard (entriesResult == nil) else { return }
-            self.refresh()
-        }
-        .refreshable {
-            self.refresh()
+            .navigationTitle("Canopy")
+            .navigationDestination(for: Selection.self) { selection in
+                switch selection {
+                case .entry(let entry):
+                    SystemEntryDetailView(entry: entry)
+                }
+            }
+            .onAppear {
+                guard (entriesResult == nil) else { return }
+                self.refresh()
+            }
+            .refreshable {
+                self.refresh()
+            }
         }
     }
 }
