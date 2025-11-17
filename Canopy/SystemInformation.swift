@@ -319,6 +319,12 @@ extension SystemInformation.ObjectID: Comparable {
     }
 }
 
+extension SystemInformation.ObjectFlags {
+    // https://github.com/apple-oss-distributions/xnu/blob/f6217f891ac0bb64f3d375211650a4c1ff8ca1ea/bsd/sys/sysctl.h#L169
+    /// permanent sysctl_oid
+    static let permanent: Self = .init(rawValue: 0x00200000 as CInt)
+}
+
 extension SystemInformation.ObjectMetadata {
     enum TypeHeuristic {
         case string
