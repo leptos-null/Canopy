@@ -94,23 +94,6 @@ private struct SystemEntryRow: View {
     }
 }
 
-private struct BestEffortValueView: View {
-    let value: SystemInformation.BestEffortValue
-    
-    var body: some View {
-        switch value {
-        case .string(let string):
-            Text(string)
-        case .signedInteger(let int):
-            Text(int, format: .number)
-        case .unsignedInteger(let uint):
-            Text(uint, format: .number)
-        case .opaque(let array):
-            Text("opaque - \(array.count, format: .number) bytes")
-        }
-    }
-}
-
 #Preview {
     ContentView()
 }
