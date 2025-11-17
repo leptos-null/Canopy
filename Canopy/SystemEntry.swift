@@ -18,12 +18,12 @@ class SystemEntry: Identifiable {
     private var cachedMetadata: Result<SystemInformation.ObjectMetadata, System.Errno>?
     private var cachedRawBytes: Result<[UInt8], System.Errno>?
     
-    private class func testSet<T, E>(cache: inout Result<T, E>?, compute: () throws(E) -> T) -> Result<T, E> {
-        if let cache {
-            return cache
+    private func testSet<T, E>(cache keyPath: ReferenceWritableKeyPath<SystemEntry, Result<T, E>?>, compute: () throws(E) -> T) -> Result<T, E> {
+        if let cacheValue = self[keyPath: keyPath] {
+            return cacheValue
         }
         let result: Result<T, E> = .init(catching: compute)
-        cache = result
+        self[keyPath: keyPath] = result
         return result
     }
     
@@ -32,25 +32,25 @@ class SystemEntry: Identifiable {
     }
     
     var label: Result<String, System.Errno> {
-        Self.testSet(cache: &cachedLabel) { () throws(System.Errno) in
+        testSet(cache: \.cachedLabel) { () throws(System.Errno) in
             try SystemInformation.label(for: id)
         }
     }
     
     var description: Result<String, System.Errno> {
-        Self.testSet(cache: &cachedDescription) { () throws(System.Errno) in
+        testSet(cache: \.cachedDescription) { () throws(System.Errno) in
             try SystemInformation.description(for: id)
         }
     }
     
     var metadata: Result<SystemInformation.ObjectMetadata, System.Errno> {
-        Self.testSet(cache: &cachedMetadata) { () throws(System.Errno) in
+        testSet(cache: \.cachedMetadata) { () throws(System.Errno) in
             try SystemInformation.metadata(for: id)
         }
     }
     
     var rawBytes: Result<[UInt8], System.Errno> {
-        Self.testSet(cache: &cachedRawBytes) { () throws(System.Errno) in
+        testSet(cache: \.cachedRawBytes) { () throws(System.Errno) in
             try SystemInformation.object(for: id)
         }
     }
