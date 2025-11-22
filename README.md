@@ -10,7 +10,7 @@ Originally, I developed this app to be able to browse `sysctl` entries on iOS, h
 
 Most of the code to interact with `sysctl` is in the `SystemInformation` namespace in this repo. This code provides a nice Swift wrapper for the `sysctl(3)` call, as well as wrapping the "private" API that Canopy uses to enumerate `sysctl` entries, access their descriptions, and other data.
 
-As the code in `SystemInformation` reference, most of the code is based on Apple's open source [sysctl](https://github.com/apple-oss-distributions/system_cmds/blob/e0c267e80e451b9441ec4f4bb05dd72f0b49d596/sysctl) tool.
+As the code in `SystemInformation` references, most of the code is based on Apple's open source [sysctl](https://github.com/apple-oss-distributions/system_cmds/blob/e0c267e80e451b9441ec4f4bb05dd72f0b49d596/sysctl) tool.
 
 If you're interested in `sysctl`, I suggest reading <https://freebsdfoundation.org/wp-content/uploads/2014/01/Implementing-System-Control-Nodes-sysctl.pdf> for more details.
 
